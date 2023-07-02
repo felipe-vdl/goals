@@ -51,7 +51,7 @@ app.post("/goals/:id/update", async (req: Request, res: Response) => {
     data: {
       title,
       content,
-      deadline: new Date(deadline)
+      deadline: deadline ? new Date(deadline) : null
     }
   });
 
@@ -66,6 +66,19 @@ app.post("/goals/delete", async (req: Request, res: Response) => {
   });
 
   return res.status(200).json({ success: true, goal: deletedGoal });
+});
+
+app.post("/goals/complete", async (req: Request, res: Response) => {
+  const { id, completed_at } = req.body;
+
+  const completedGoal = await prisma.goal.update({
+    where: { id },
+    data: {
+      completed_at: completed_at ? null : new Date(),
+    }
+  });
+
+  return res.status(200).json({ success: true, goal: completedGoal });
 });
 
 app.listen(port, () => {

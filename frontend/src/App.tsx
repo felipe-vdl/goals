@@ -88,6 +88,26 @@ export default function App() {
     goalsMutation.mutate(form);
   }
 
+  const completeGoalMutation = useMutation({
+    mutationFn: async ({ id, completed_at }:
+      {
+        id: string, completed_at: string | undefined
+      }) => {
+      const res = await fetch("http://localhost:4000/goals/complete", {
+        method: "POST",
+        body: JSON.stringify({ id, completed_at }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      const data = await res.json();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["goals"]);
+    }
+  });
+
   const deleteGoalMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch("http://localhost:4000/goals/delete", {
@@ -115,7 +135,6 @@ export default function App() {
     },
     isEditing: false
   });
-
   const handleEditGoal = (goal: Goal) => {
     setGoalEditor({
       isEditing: true,
@@ -170,7 +189,7 @@ export default function App() {
                 data.length > 0 ?
                 <>
                   {data.map((goal) => (
-                    <GoalListItem key={uuid()} handleEditGoal={handleEditGoal} deleteGoalMutation={deleteGoalMutation} goal={goal} />
+                    <GoalListItem key={uuid()} handleEditGoal={handleEditGoal} completeGoalMutation={completeGoalMutation} deleteGoalMutation={deleteGoalMutation} goal={goal} />
                   ))}
                 </>
                 : <h3 className="text-white m-auto">No goals were found.</h3>
