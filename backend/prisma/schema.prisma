@@ -16,6 +16,7 @@ model Goal {
   content      String    @db.Text
 
   completed_at DateTime?
+  deleted_at DateTime?
   deadline     DateTime?
 
   @@map("goals")

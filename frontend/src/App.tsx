@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { v4 as uuid } from "uuid";
 
 import GoalListItem from "./components/GoalListItem"
 import GoalEditorModal from "./components/GoalEditorModal";
+import UndoGoalPopup from "./components/UndoGoalPopup";
 
 export type Goal = {
   id: string;
@@ -11,12 +13,22 @@ export type Goal = {
   content: string;
   deadline?: string;
   completed_at?: string;
+  deleted_at?: string;
 };
 
 export type GoalEditor = {
   goal: Goal,
   isEditing: boolean
 }
+
+export type UpdateGoalForm = {
+  id: string;
+  title: string;
+  content: string;
+  deadline?: string;
+}
+
+export type UndoGoalParams = Goal;
 
 export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_PORT) ? `${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}` : "http://localhost:4000";
 
@@ -49,13 +61,13 @@ export default function App() {
   const handleKeyDown = (evt: React.KeyboardEvent<HTMLFormElement>) => {
     if (evt.key === "Enter" && !evt.shiftKey) {
       evt.preventDefault();
-      goalsMutation.mutate(form);
+      createGoalsMutation.mutate(form);
     }
   }
 
   const queryClient = useQueryClient();
 
-  const goalsMutation = useMutation({
+  const createGoalsMutation = useMutation({
     mutationFn: async (variables: Omit<Goal, "id">) => {
       const res = await fetch(`${API_URL}/goals/new`, {
         body: JSON.stringify(variables),
@@ -87,7 +99,74 @@ export default function App() {
 
   const handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
-    goalsMutation.mutate(form);
+    createGoalsMutation.mutate(form);
+  }
+
+  const [undoList, setUndoList] = useState<(Goal & { message: string })[]>([]);
+  const undoGoalMutation = useMutation({
+    mutationFn: async (goal: UndoGoalParams) => {
+      const res = await fetch(`${API_URL}/goals/${goal.id}/update`, {
+        method: "POST",
+        body: JSON.stringify(goal),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      const data = await res.json();
+      return data;
+    },
+    onSuccess: ({ goal }: { goal: Goal }) => {
+      queryClient.invalidateQueries(["goals"]);
+      setUndoList(st => {
+        return st.filter(g => goal.id !== g.id);
+      });
+    }
+  });
+
+  const updateGoalMutation = useMutation({
+    mutationFn: async (goal: UpdateGoalForm) => {
+      const res = await fetch(`${API_URL}/goals/${goal.id}/update`, {
+        method: "POST",
+        body: JSON.stringify(goal),
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+      const data = await res.json();
+
+      return data as {
+        goal: Goal,
+        message: string;
+      }
+    },
+    onSuccess: ({ goal, message }: { goal: Goal, message: string }) => {
+      console.log(goal, message);
+      queryClient.invalidateQueries(["goals"]);
+      setGoalEditor(st => ({ ...st, isEditing: false }));
+
+      setUndoList(st => [...st, { ...goal, message }]);
+
+      setTimeout(() => {
+        setUndoList(st => {
+          return st.filter(g => goal.id !== g.id);
+        });
+      }, 5000);
+    }
+  });
+  const [goalEditor, setGoalEditor] = useState<GoalEditor>({
+    goal: {
+      id: "",
+      content: "",
+      title: ""
+    },
+    isEditing: false
+  });
+  const handleEditGoal = (goal: Goal) => {
+    setGoalEditor({
+      isEditing: true,
+      goal
+    });
   }
 
   const completeGoalMutation = useMutation({
@@ -105,16 +184,17 @@ export default function App() {
       const data = await res.json();
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(["goals"]);
+      console.log(data);
     }
   });
 
   const deleteGoalMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, deleted_at }: { id: string, deleted_at: string | undefined }) => {
       const res = await fetch(`${API_URL}/goals/delete`, {
         method: "POST",
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, deleted_at }),
         headers: {
           "Content-Type": "application/json",
         }
@@ -124,25 +204,19 @@ export default function App() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: ({ goal, message }: { goal: Goal, message: string }) => {
+      console.log(goal, message);
       queryClient.invalidateQueries(["goals"]);
+      setUndoList(st => ([...st, { ...goal, message }]));
+      setTimeout(() => {
+        setUndoList(st => {
+          return st.filter(g => goal.id !== g.id);
+        });
+      }, 4000);
     }
   });
 
-  const [goalEditor, setGoalEditor] = useState<GoalEditor>({
-    goal: {
-      id: "",
-      content: "",
-      title: ""
-    },
-    isEditing: false
-  });
-  const handleEditGoal = (goal: Goal) => {
-    setGoalEditor({
-      isEditing: true,
-      goal
-    });
-  }
+
 
   return (
     <>
@@ -181,7 +255,7 @@ export default function App() {
                 />
               </div>
               <input type="submit" hidden />
-              <button disabled={goalsMutation.isLoading} className="transition-colors hover:from-red-500 hover:to-amber-500 rounded px-2 py-2 w-full bg-gradient-to-r from-green-500 to-cyan-500 text-white disabled:from-green-600/70 disabled:to-cyan-600/70">Send</button>
+              <button disabled={createGoalsMutation.isLoading} className="transition-colors hover:from-red-500 hover:to-amber-500 rounded px-2 py-2 w-full bg-gradient-to-r from-green-500 to-cyan-500 text-white disabled:from-green-600/70 disabled:to-cyan-600/70">Send</button>
             </div>
           </form>
           <div className="p-4 rounded bg-slate-800/80 text-white bg-gradient-to-br from-white/5 to-black/10 flex-1 flex flex-col">
@@ -200,7 +274,13 @@ export default function App() {
           </div>
         </main>
       </div>
-      {goalEditor.isEditing && <GoalEditorModal goal={goalEditor.goal} setGoalEditor={setGoalEditor} />}
+      {goalEditor.isEditing && <GoalEditorModal goal={goalEditor.goal} updateGoalMutation={updateGoalMutation} setGoalEditor={setGoalEditor} />}
+      {undoList.length > 0 && createPortal(
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col w-full items-center gap-4">
+          <UndoGoalPopup key={uuid()} undoGoalMutation={undoGoalMutation} goal={undoList[undoList.length - 1]} />
+        </div>,
+        document.querySelector<HTMLDivElement>("#undo-list")!
+      )}
     </>
   );
 }

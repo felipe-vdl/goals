@@ -1,15 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import type { Goal, GoalEditor } from "../App";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { API_URL } from "../App";
-
-interface GoalForm {
-  id: string;
-  title: string;
-  content: string;
-  deadline?: string;
-}
+import { UpdateGoalForm } from "../App";
+import { UseMutationResult } from "@tanstack/react-query";
 
 declare global {
   interface Date {
@@ -22,37 +15,20 @@ Date.prototype.addHours = function (h: number): Date {
   return this;
 }
 
-type GoalEditorProps = { goal: Goal, setGoalEditor: React.Dispatch<React.SetStateAction<GoalEditor>> }
+type GoalEditorProps = {
+  goal: Goal,
+  setGoalEditor: React.Dispatch<React.SetStateAction<GoalEditor>>,
+  updateGoalMutation: UseMutationResult<{
+    goal: Goal;
+  }, unknown, UpdateGoalForm, unknown>
+}
 
-export default function GoalEditorModal({ goal, setGoalEditor }: GoalEditorProps) {
-  const [form, setForm] = useState<GoalForm>({
+export default function GoalEditorModal({ goal, setGoalEditor, updateGoalMutation }: GoalEditorProps) {
+  const { mutate, isLoading } = updateGoalMutation;
+
+  const [form, setForm] = useState<UpdateGoalForm>({
     ...goal,
     deadline: goal.deadline ? new Date(goal.deadline).addHours(-3).toISOString().slice(0, 16) : ""
-  });
-
-  const queryClient = useQueryClient();
-
-  const { mutate, isLoading } = useMutation({
-    mutationFn: async (goal: GoalForm) => {
-      const res = await fetch(`${API_URL}/goals/${goal.id}/update`, {
-        method: "POST",
-        body: JSON.stringify(form),
-        headers: {
-          "Content-Type": "application/json",
-        }
-      });
-
-      const data = await res.json();
-
-      return data as {
-        goal: Goal,
-        success: boolean
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["goals"]);
-      setGoalEditor(st => ({ ...st, isEditing: false }));
-    }
   });
 
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
