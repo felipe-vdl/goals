@@ -23,6 +23,9 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost
+      - VITE_API_PORT=4000
 
 volumes:
   mysql_data:

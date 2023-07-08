@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import type { Goal, GoalEditor } from "../App";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { API_URL } from "../App";
 
 interface GoalForm {
   id: string;
@@ -33,7 +34,7 @@ export default function GoalEditorModal({ goal, setGoalEditor }: GoalEditorProps
 
   const { mutate, isLoading } = useMutation({
     mutationFn: async (goal: GoalForm) => {
-      const res = await fetch(`http://localhost:4000/goals/${goal.id}/update`, {
+      const res = await fetch(`${API_URL}/goals/${goal.id}/update`, {
         method: "POST",
         body: JSON.stringify(form),
         headers: {

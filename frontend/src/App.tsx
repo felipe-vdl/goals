@@ -18,11 +18,13 @@ export type GoalEditor = {
   isEditing: boolean
 }
 
+export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_PORT) ? `${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}` : "http://localhost:4000";
+
 export default function App() {
   const { data, isSuccess } = useQuery<Goal[]>({
     queryKey: ["goals"],
     queryFn: async () => {
-      const res = await fetch("http://localhost:4000/goals");
+      const res = await fetch(`${API_URL}/goals`);
       const data = await res.json();
       return data;
     },
@@ -55,7 +57,7 @@ export default function App() {
 
   const goalsMutation = useMutation({
     mutationFn: async (variables: Omit<Goal, "id">) => {
-      const res = await fetch('http://localhost:4000/goals/new', {
+      const res = await fetch(`${API_URL}/goals/new`, {
         body: JSON.stringify(variables),
         method: "post",
         headers: {
@@ -93,7 +95,7 @@ export default function App() {
       {
         id: string, completed_at: string | undefined
       }) => {
-      const res = await fetch("http://localhost:4000/goals/complete", {
+      const res = await fetch(`${API_URL}/goals/complete`, {
         method: "POST",
         body: JSON.stringify({ id, completed_at }),
         headers: {
@@ -110,7 +112,7 @@ export default function App() {
 
   const deleteGoalMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch("http://localhost:4000/goals/delete", {
+      const res = await fetch(`${API_URL}/goals/delete`, {
         method: "POST",
         body: JSON.stringify({ id }),
         headers: {
