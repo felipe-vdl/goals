@@ -26,6 +26,9 @@ const goalSortingFns = {
     if (!a.deadline) return order === "asc" ? -1 : 1;
     if (!b.deadline) return order === "asc" ? 1 : -1;
 
+    // Ignore deadline if goal was already completed.
+    if (a.completed_at) return 1;
+
     const deadlineA = new Date(a.deadline);
     const deadlineB = new Date(b.deadline);
 

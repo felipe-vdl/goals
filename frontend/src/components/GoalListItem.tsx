@@ -82,6 +82,9 @@ export default function GoalListItem({ goal, handleEditGoal, deleteGoalMutation,
           :
           <small title={titleFormatter.format(new Date(goal.deadline))} className="border-t border-white/40 mt-1 pt-1 text-xs text-green-400">Expires {formatTimeAgo(new Date(goal.deadline))}.</small>
         : <></>}
+      {goal.completed_at &&
+        <small className="border-t border-green-400/40 mt-1 pt-1 text-xs text-green-400">Completed on {titleFormatter.format(new Date(goal.completed_at))}</small>
+      }
     </div>
   </div>
 }
