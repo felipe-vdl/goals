@@ -16,7 +16,7 @@ Date.prototype.addHours = function (h: number): Date {
 }
 
 type GoalEditorProps = {
-  goal: Goal,
+  goal: Omit<Goal, "created_at" | "updated_at">,
   setGoalEditor: React.Dispatch<React.SetStateAction<GoalEditor>>,
   updateGoalMutation: UseMutationResult<{
     goal: Goal;

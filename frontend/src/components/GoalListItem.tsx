@@ -4,10 +4,11 @@ import { UseMutationResult } from "@tanstack/react-query";
 interface GoalListItemProps {
   goal: Goal;
   handleEditGoal: (goal: Goal) => void;
-  deleteGoalMutation: UseMutationResult<any, unknown, { id: string, deleted_at: string | undefined }, unknown>;
-  completeGoalMutation: UseMutationResult<any, unknown, { id: string, completed_at: string | undefined }, unknown>;
+  deleteGoalMutation: UseMutationResult<any, unknown, { id: string, deleted_at: Date | undefined }, unknown>;
+  completeGoalMutation: UseMutationResult<any, unknown, { id: string, completed_at: Date | undefined }, unknown>;
 }
 
+const titleFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeStyle: "short" });
 const formatter = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
 
 type RelativeTimeFormatUnit = "day" | "days" | "hour" | "hours" | "minute" | "minutes" | "month" | "months" | "quarter" | "quarters" | "second" | "seconds" | "week" | "weeks" | "year" | "years";
@@ -77,9 +78,9 @@ export default function GoalListItem({ goal, handleEditGoal, deleteGoalMutation,
       <p className={`${goal.completed_at ? "text-green-300/80" : "text-white/80"} text-md`}>{goal.content}</p>
       {!goal.completed_at && goal.deadline ?
         new Date(goal.deadline).getTime() < new Date().getTime() ?
-          <small className="border-t border-white/40 mt-1 pt-1 text-xs text-red-400">Expired {formatTimeAgo(new Date(goal.deadline))}.</small>
+          <small title={titleFormatter.format(new Date(goal.deadline))} className="border-t border-white/40 mt-1 pt-1 text-xs text-red-400">Expired {formatTimeAgo(new Date(goal.deadline))}.</small>
           :
-          <small className="border-t border-white/40 mt-1 pt-1 text-xs text-green-400">Expires {formatTimeAgo(new Date(goal.deadline))}.</small>
+          <small title={titleFormatter.format(new Date(goal.deadline))} className="border-t border-white/40 mt-1 pt-1 text-xs text-green-400">Expires {formatTimeAgo(new Date(goal.deadline))}.</small>
         : <></>}
     </div>
   </div>

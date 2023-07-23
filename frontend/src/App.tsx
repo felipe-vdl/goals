@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import useLocalStorage from "./hooks/useLocalStorage";
 import { createPortal } from "react-dom";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { v4 as uuid } from "uuid";
+import goalSortingFns, { type GoalSorting } from "./utils/goalSortingFns"
 
 import GoalListItem from "./components/GoalListItem"
 import GoalEditorModal from "./components/GoalEditorModal";
@@ -11,13 +13,15 @@ export type Goal = {
   id: string;
   title: string;
   content: string;
-  deadline?: string;
-  completed_at?: string;
-  deleted_at?: string;
+  deadline?: Date;
+  completed_at?: Date;
+  deleted_at?: Date;
+  created_at: Date;
+  updated_at?: Date;
 };
 
 export type GoalEditor = {
-  goal: Goal,
+  goal: Omit<Goal, "created_at" | "updated_at">,
   isEditing: boolean
 }
 
@@ -33,11 +37,21 @@ export type UndoGoalParams = Goal;
 export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_PORT) ? `${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}` : "http://localhost:4000";
 
 export default function App() {
+  const [sortType, setSortType] = useLocalStorage<GoalSorting>({
+    type: "created-at", order: "desc"
+  }, "goals-order");
+  const handleSortChange = (evt: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortType(st => ({
+      ...st,
+      [evt.target.name]: evt.target.value,
+    }));
+  }
+
   const { data, isSuccess } = useQuery<Goal[]>({
     queryKey: ["goals"],
     queryFn: async () => {
       const res = await fetch(`${API_URL}/goals`);
-      const data = await res.json();
+      const data = await res.json() as Goal[];
       return data;
     },
     onSuccess: (data: Goal[]) => {
@@ -45,10 +59,10 @@ export default function App() {
     },
   });
 
-  const [form, setForm] = useState<Omit<Goal, "id">>({
+  const [form, setForm] = useState<Omit<Goal, "id" | "created_at" | "updated_at">>({
     title: "",
     content: "",
-    deadline: ""
+    deadline: undefined
   });
 
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -68,7 +82,7 @@ export default function App() {
   const queryClient = useQueryClient();
 
   const createGoalsMutation = useMutation({
-    mutationFn: async (variables: Omit<Goal, "id">) => {
+    mutationFn: async (variables: Omit<Goal, "id" | "created_at" | "updated_at">) => {
       const res = await fetch(`${API_URL}/goals/new`, {
         body: JSON.stringify(variables),
         method: "post",
@@ -88,7 +102,7 @@ export default function App() {
       setForm({
         title: "",
         content: "",
-        deadline: ""
+        deadline: undefined
       })
       queryClient.invalidateQueries(["goals"]);
     },
@@ -172,7 +186,7 @@ export default function App() {
   const completeGoalMutation = useMutation({
     mutationFn: async ({ id, completed_at }:
       {
-        id: string, completed_at: string | undefined
+        id: string, completed_at: Date | undefined
       }) => {
       const res = await fetch(`${API_URL}/goals/complete`, {
         method: "POST",
@@ -191,7 +205,7 @@ export default function App() {
   });
 
   const deleteGoalMutation = useMutation({
-    mutationFn: async ({ id, deleted_at }: { id: string, deleted_at: string | undefined }) => {
+    mutationFn: async ({ id, deleted_at }: { id: string, deleted_at: Date | undefined }) => {
       const res = await fetch(`${API_URL}/goals/delete`, {
         method: "POST",
         body: JSON.stringify({ id, deleted_at }),
@@ -251,7 +265,7 @@ export default function App() {
                   min={new Date().toISOString().slice(0, 16)}
                   className="bg-slate-800 text-white flex-1 py-1 px-2 outline-0 rounded"
                   onChange={handleChange}
-                  value={form.deadline}
+                  value={form?.deadline ? `${form.deadline}` : ""}
                 />
               </div>
               <input type="submit" hidden />
@@ -259,12 +273,29 @@ export default function App() {
             </div>
           </form>
           <div className="p-4 rounded bg-slate-800/80 text-white bg-gradient-to-br from-white/5 to-black/10 flex-1 flex flex-col">
-            <h2 className="text-xl font-light border-b px-2 pb-2 mb-4">Goals:</h2>
+            <div className="flex border-b px-2 pb-2 mb-4 items-center">
+              <h2 className="flex-1 text-xl font-light">Goals:</h2>
+              <div className="flex">
+                <label className="flex-1">Order by:</label>
+                <select className="flex-1 bg-slate-500 outline-0 text-center rounded mx-2 py-1" onChange={handleSortChange} name="type" defaultValue={sortType.type}>
+                  <option value="created-at">Creation</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="completed-at">Completion</option>
+                  <option value="title">Title</option>
+                </select>
+                <select className="flex-1 bg-slate-500 outline-0 text-center rounded py-1" onChange={handleSortChange} name="order" defaultValue={sortType.order}>
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
+            </div>
             <div className="flex-1 flex flex-col gap-4 overflow-auto pr-2">
               {isSuccess &&
                 data.length > 0 ?
                 <>
-                  {data.map((goal) => (
+                  {data.sort((a, b) => {
+                    return goalSortingFns[sortType.type ? sortType.type : "created-at"](a, b, sortType.order);
+                  }).map((goal) => (
                     <GoalListItem key={uuid()} handleEditGoal={handleEditGoal} completeGoalMutation={completeGoalMutation} deleteGoalMutation={deleteGoalMutation} goal={goal} />
                   ))}
                 </>
