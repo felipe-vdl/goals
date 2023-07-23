@@ -12,7 +12,8 @@ const goalSortingFns = {
     return 0;
   },
   "completed-at": (a: Goal, b: Goal, order: SortOrder): number => {
-    if (!a.completed_at) return order === "asc" ? -1 : 1
+    // Put at last if not completed.
+    if (!a.completed_at) return 1;
     if (!b.completed_at) return order === "asc" ? 1 : -1
 
     const completedA = new Date(a.completed_at);
@@ -26,7 +27,7 @@ const goalSortingFns = {
     if (!a.deadline) return order === "asc" ? -1 : 1;
     if (!b.deadline) return order === "asc" ? 1 : -1;
 
-    // Ignore deadline if goal was already completed.
+    // Put at last if already completed.
     if (a.completed_at) return 1;
 
     const deadlineA = new Date(a.deadline);
