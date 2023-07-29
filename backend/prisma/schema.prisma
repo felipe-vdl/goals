@@ -10,16 +10,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Difficulty {
+  EASY
+  MODERATE
+  HARD
+}
+
 model Goal {
   id           String    @id @default(cuid())
   title        String    @db.Text
   content      String    @db.Text
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime? @updatedAt
+  difficulty   Difficulty @default(EASY)
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime? @updatedAt
   
   completed_at DateTime?
-  deleted_at DateTime?
+  deleted_at   DateTime?
   deadline     DateTime?
 
   @@map("goals")

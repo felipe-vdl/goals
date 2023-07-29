@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { prisma } from "./db";
 import cors from "cors";
+import { Difficulty } from "@prisma/client";
 
 dotenv.config();
 
@@ -32,7 +33,8 @@ app.get("/goals", async (req: Request, res: Response) => {
 
 app.post("/goals/new", async (req: Request, res: Response) => {
   const { title, content, deadline } = req.body;
-
+  const difficulty = req.body.difficulty as Difficulty
+  
   if (!title || !content) {
     return res.status(500).json({ message: "No input was provided." });
   };
@@ -42,6 +44,7 @@ app.post("/goals/new", async (req: Request, res: Response) => {
       title,
       content,
       deadline: new Date(deadline),
+      difficulty
     }
   });
 
@@ -51,7 +54,8 @@ app.post("/goals/new", async (req: Request, res: Response) => {
 app.post("/goals/:id/update", async (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, content, deadline, completed_at, deleted_at } = req.body;
-
+  const difficulty = req.body.difficulty as Difficulty
+  
   const oldGoal = await prisma.goal.findFirst({ where: { id } });
 
   const updatedGoal = await prisma.goal.update({
@@ -59,6 +63,7 @@ app.post("/goals/:id/update", async (req: Request, res: Response) => {
     data: {
       title,
       content,
+      difficulty,
       completed_at: completed_at ? new Date(completed_at) : null,
       deadline: deadline ? new Date(deadline) : null,
       deleted_at: deleted_at ? new Date(deleted_at) : null

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { Goal, GoalEditor } from "../App";
 import { UpdateGoalForm } from "../App";
 import { UseMutationResult } from "@tanstack/react-query";
+import { difficultyStyle } from "../App";
 
 declare global {
   interface Date {
@@ -77,6 +78,35 @@ export default function GoalEditorModal({ goal, setGoalEditor, updateGoalMutatio
             className="p-2 outline-0 text-white bg-slate-800 flex-1 rounded resize-none"
             rows={4}
           />
+          <div className="flex flex-col gap-2">
+            <label className="text-white">Difficulty</label>
+            <div className="flex justify-around items-center">
+              <div className="flex items-center justify-center py-1">
+                <label htmlFor="EASY" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty ? difficultyStyle[form.difficulty] : ""}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                  </svg>
+                </label>
+                <input id="EASY" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "EASY"} value="EASY" onChange={handleChange} />
+              </div>
+              <div className="flex items-center justify-center py-1">
+                <label htmlFor="MODERATE" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty && ["HARD", "MODERATE"].includes(form.difficulty) ? difficultyStyle[form.difficulty] : ""}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                  </svg>
+                </label>
+                <input id="MODERATE" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "MODERATE"} value="MODERATE" onChange={handleChange} />
+              </div>
+              <div className="flex items-center justify-center py-1">
+                <label htmlFor="HARD" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty === "HARD" ? difficultyStyle[form.difficulty] : ""}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                  </svg>
+                </label>
+                <input id="HARD" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "HARD"} value="HARD" onChange={handleChange} />
+              </div>
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             <label className="text-white" htmlFor="deadline">Deadline</label>
             <input

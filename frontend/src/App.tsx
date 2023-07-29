@@ -13,6 +13,7 @@ export type Goal = {
   id: string;
   title: string;
   content: string;
+  difficulty?: "HARD" | "MODERATE" | "EASY";
   deadline?: Date;
   completed_at?: Date;
   deleted_at?: Date;
@@ -30,9 +31,16 @@ export type UpdateGoalForm = {
   title: string;
   content: string;
   deadline?: string;
+  difficulty?: "HARD" | "MODERATE" | "EASY";
 }
 
 export type UndoGoalParams = Goal;
+
+export const difficultyStyle = {
+  "EASY": "text-green-500",
+  "MODERATE": "text-yellow-500",
+  "HARD": "text-red-600",
+}
 
 export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_PORT) ? `${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}` : "http://localhost:4000";
 
@@ -62,7 +70,8 @@ export default function App() {
   const [form, setForm] = useState<Omit<Goal, "id" | "created_at" | "updated_at">>({
     title: "",
     content: "",
-    deadline: undefined
+    deadline: undefined,
+    difficulty: undefined
   });
 
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -102,7 +111,8 @@ export default function App() {
       setForm({
         title: "",
         content: "",
-        deadline: undefined
+        deadline: undefined,
+        difficulty: undefined
       })
       queryClient.invalidateQueries(["goals"]);
     },
@@ -172,7 +182,8 @@ export default function App() {
     goal: {
       id: "",
       content: "",
-      title: ""
+      title: "",
+      difficulty: undefined
     },
     isEditing: false
   });
@@ -230,8 +241,6 @@ export default function App() {
     }
   });
 
-
-
   return (
     <>
       <div className="h-screen flex flex-col bg-slate-600 bg-gradient-to-br from-blue-500/50 to-green-500/50">
@@ -240,7 +249,7 @@ export default function App() {
             <h3 className="text-xl font-light border-b pb-2 text-center mb-4">
               Add a New Goal
             </h3>
-            <div className="flex flex-col gap-2 flex-1">
+            <div className="flex flex-col gap-3 flex-1">
               <input
                 value={form.title}
                 onChange={handleChange}
@@ -256,6 +265,35 @@ export default function App() {
                 placeholder="Content"
                 className="p-2 outline-0 text-white bg-slate-800 flex-1 rounded resize-none"
               />
+              <div className="flex flex-col gap-2">
+                <label className="text-white">Difficulty</label>
+                <div className="flex justify-around items-center">
+                  <div className="flex items-center justify-center py-1">
+                    <label htmlFor="EASY" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty ? difficultyStyle[form.difficulty] : ""}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                      </svg>
+                    </label>
+                    <input id="EASY" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "EASY"} value="EASY" onChange={handleChange} />
+                  </div>
+                  <div className="flex items-center justify-center py-1">
+                    <label htmlFor="MODERATE" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty && ["HARD", "MODERATE"].includes(form.difficulty) ? difficultyStyle[form.difficulty] : ""}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                      </svg>
+                    </label>
+                    <input id="MODERATE" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "MODERATE"} value="MODERATE" onChange={handleChange} />
+                  </div>
+                  <div className="flex items-center justify-center py-1">
+                    <label htmlFor="HARD" className={`absolute z-10 text-slate-800/90 cursor-pointer ${form.difficulty === "HARD" ? difficultyStyle[form.difficulty] : ""}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                      </svg>
+                    </label>
+                    <input id="HARD" className="z-20 opacity-0 cursor-pointer" type="radio" name="difficulty" required defaultChecked={form.difficulty === "HARD"} value="HARD" onChange={handleChange} />
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-col gap-2">
                 <label className="text-white" htmlFor="deadline">Deadline</label>
                 <input
@@ -280,6 +318,7 @@ export default function App() {
                 <select className="flex-1 bg-slate-500 outline-0 text-center rounded mx-2 py-1" onChange={handleSortChange} name="type" defaultValue={sortType.type}>
                   <option value="created-at">Creation</option>
                   <option value="deadline">Deadline</option>
+                  <option value="difficulty">Difficulty</option>
                   <option value="completed-at">Completion</option>
                   <option value="title">Title</option>
                 </select>

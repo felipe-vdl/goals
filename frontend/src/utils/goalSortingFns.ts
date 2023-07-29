@@ -1,7 +1,7 @@
 import type { Goal } from "../App";
 
 type SortOrder = "asc" | "desc";
-export type GoalSorting = { type: "created-at" | "completed-at" | "deadline" | "title", order: SortOrder };
+export type GoalSorting = { type: "created-at" | "completed-at" | "deadline" | "difficulty" | "title", order: SortOrder };
 
 const goalSortingFns = {
   "created-at": (a: Goal, b: Goal, order: SortOrder): number => {
@@ -41,6 +41,16 @@ const goalSortingFns = {
     if (a.title > b.title) return order === "asc" ? 1 : -1
     if (a.title < b.title) return order === "asc" ? -1 : 1
     return 0;
+  },
+  "difficulty": (a: Goal, b: Goal, order: SortOrder): number => {
+    let result = 0;
+
+    if (a.difficulty === "EASY" && b.difficulty !== "EASY") result = -1;
+    else if (a.difficulty === "MODERATE" && b.difficulty === "EASY") result = 1;
+    else if (a.difficulty === "MODERATE" && b.difficulty === "HARD") result = -1;
+    else if (a.difficulty === "HARD" && ["EASY", "MODERATE"].includes(b.difficulty!)) result = 1;
+
+    return result * (order === "asc" ? 1 : -1);
   }
 };
 
