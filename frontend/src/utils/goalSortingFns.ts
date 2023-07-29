@@ -12,29 +12,34 @@ const goalSortingFns = {
     return 0;
   },
   "completed-at": (a: Goal, b: Goal, order: SortOrder): number => {
-    // Put at last if not completed.
-    if (!a.completed_at) return 1;
-    if (!b.completed_at) return order === "asc" ? 1 : -1
+    if (!a.completed_at && b.completed_at) return order === "asc" ? -1 : 1;
+    if (a.completed_at && !b.completed_at) return order === "asc" ? 1 : -1;
 
-    const completedA = new Date(a.completed_at);
-    const completedB = new Date(b.completed_at);
+    if (a.completed_at && b.completed_at) {
+      const completedA = new Date(a.completed_at);
+      const completedB = new Date(b.completed_at);
 
-    if (completedA.getTime() > completedB.getTime()) return order === "asc" ? 1 : -1
-    if (completedA.getTime() < completedB.getTime()) return order === "asc" ? -1 : 1
+      if (completedA.getTime() > completedB.getTime()) return order === "asc" ? 1 : -1
+      if (completedA.getTime() < completedB.getTime()) return order === "asc" ? -1 : 1
+    }
     return 0;
   },
   "deadline": (a: Goal, b: Goal, order: SortOrder): number => {
-    if (!a.deadline) return order === "asc" ? -1 : 1;
-    if (!b.deadline) return order === "asc" ? 1 : -1;
+    if (!a.deadline && b.deadline) return 1;
+    if (a.deadline && !b.deadline) return -1;
+    if (!a.deadline && !b.deadline) return 0
 
-    // Put at last if already completed.
-    if (a.completed_at) return 1;
+    if (a.deadline && b.deadline) {
+      if (a.completed_at && !b.completed_at) return 1;
+      if (!a.completed_at && b.completed_at) return -1;
+      if (a.completed_at && b.completed_at) return 0;
 
-    const deadlineA = new Date(a.deadline);
-    const deadlineB = new Date(b.deadline);
+      const deadlineA = new Date(a.deadline);
+      const deadlineB = new Date(b.deadline);
 
-    if (deadlineA.getTime() > deadlineB.getTime()) return order === "asc" ? 1 : -1
-    if (deadlineA.getTime() < deadlineB.getTime()) return order === "asc" ? -1 : 1
+      if (deadlineA.getTime() > deadlineB.getTime()) return order === "asc" ? 1 : -1
+      if (deadlineA.getTime() < deadlineB.getTime()) return order === "asc" ? -1 : 1
+    }
     return 0
   },
   "title": (a: Goal, b: Goal, order: SortOrder): number => {
